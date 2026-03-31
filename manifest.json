@@ -1,0 +1,16 @@
+{
+  "name": "HAF Service Pro",
+  "short_name": "HAF",
+  "description": "Sistema de Gestión de Reparaciones HAF",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f4f7f6",
+  "theme_color": "#1976d2",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3062/3062400.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
