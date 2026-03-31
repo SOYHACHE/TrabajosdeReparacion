@@ -3,59 +3,82 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HAF Service Pro - Gestión de Estados</title>
+  <title>HAF - Gestión de Service & Remitos</title>
   <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;600&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
-    :root { --primary: #1976d2; --accent: #ff9800; --bg: #f4f7f6; --danger: #d32f2f; --success: #4caf50; }
-    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
+    :root { --primary: #1976d2; --accent: #ff9800; --bg: #f4f7f6; --success: #4caf50; --text: #333; }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; }
     .container { max-width: 900px; margin: auto; }
+    
     .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
     h2 { color: var(--primary); margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 1.2rem; }
+    
     .form-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-    input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+    input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; outline: none; }
+    input:focus { border-color: var(--primary); }
     .full { grid-column: 1 / -1; }
+    
+    /* Buscador/Scanner */
     .input-con-boton { display: flex; gap: 8px; grid-column: 1 / -1; }
-    .btn-scan { background: var(--accent); color: white; padding: 0 15px; border-radius: 8px; border: none; cursor: pointer; font-size: 1.2rem; }
-    #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 15px; display: none; }
-    .photo-upload-zone { border: 2px dashed #ccc; padding: 15px; text-align: center; border-radius: 8px; cursor: pointer; background: #fafafa; }
-    #photo-preview { width: 100%; max-width: 200px; border-radius: 8px; margin-top: 10px; display: none; margin-inline: auto; }
-    .btn { cursor: pointer; padding: 12px 20px; border: none; border-radius: 8px; font-weight: bold; transition: 0.3s; }
-    .btn-save { background: var(--primary); color: white; width: 100%; }
-    .status-alert { padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none; font-weight: bold; text-align: center; }
-    .historial-item { border-left: 4px solid var(--primary); padding: 15px; margin: 10px 0; background: #fff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .btn-scan { background: var(--accent); color: white; padding: 0 15px; border: none; border-radius: 8px; cursor: pointer; font-size: 1.2rem; }
+    #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 15px; display: none; border: 2px solid var(--accent); }
+
+    /* Botones */
+    .btn { cursor: pointer; padding: 12px 20px; border: none; border-radius: 8px; font-weight: bold; transition: 0.3s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-save { background: var(--primary); color: white; flex: 1; }
+    .btn-print { background: var(--success); color: white; flex: 1; }
+    .btn-list { background: #607d8b; color: white; }
+
+    /* Foto */
+    .photo-zone { border: 2px dashed #ccc; padding: 15px; text-align: center; border-radius: 8px; cursor: pointer; background: #fafafa; }
+    #photo-preview { width: 100%; max-width: 250px; border-radius: 8px; margin-top: 10px; display: none; margin-inline: auto; }
+
+    /* Info de Estado */
+    .info-tag { padding: 10px; border-radius: 8px; margin-bottom: 15px; font-weight: 600; text-align: center; display: none; }
+    
+    /* Historial */
+    .historial-box { margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px; }
+    .historial-item { font-size: 0.85rem; padding: 8px; border-bottom: 1px solid #f0f0f0; }
+
     @media (max-width: 600px) { .form-group { grid-template-columns: 1fr; } }
+    @media print { .no-print { display: none !important; } .container { width: 100%; margin: 0; } .card { box-shadow: none; border: 1px solid #000; } }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <header style="text-align:center; margin-bottom:20px;">
-    <h1>🛠️ HAF Service Pro</h1>
+  <header style="text-align:center; margin-bottom:20px;" class="no-print">
+    <h1>📋 HAF Service Manager</h1>
+    <div style="display:flex; justify-content:center; gap:10px;">
+        <button class="btn btn-list" onclick="location.reload()">🔄 Limpiar / Nuevo</button>
+        <button class="btn btn-list" id="btn-global">📋 Listado Global</button>
+    </div>
   </header>
 
   <div class="card" id="form-card">
-    <h2 id="form-title">Nueva Intervención</h2>
-    <div id="status-msg" class="status-alert"></div>
-    <div id="reader"></div>
-    
+    <div id="info-msg" class="info-tag"></div>
+    <div id="reader" class="no-print"></div>
+
     <form id="main-form">
       <div class="form-group">
-        <div class="input-con-boton">
-            <input type="text" id="serie" placeholder="ESCANEAR O ESCRIBIR SERIE" required autocomplete="off">
-            <button type="button" class="btn-scan" id="btn-start-scan">📷</button>
+        <h2 class="full">Identificación del Equipo</h2>
+        <div class="input-con-boton no-print">
+            <input type="text" id="serie" placeholder="Nº DE SERIE / IMEI / QR" required autocomplete="off">
+            <button type="button" class="btn-scan" id="btn-scan" title="Escanear">📷</button>
         </div>
 
         <input type="text" id="cliente" placeholder="Nombre del Cliente" required>
-        <input type="text" id="equipo" placeholder="Equipo / Modelo" required class="full">
+        <input type="text" id="equipo" placeholder="Equipo (Ej: Heladera Patrick)" required class="full">
         
+        <h2 class="full">Estado Técnico</h2>
         <textarea id="falla" placeholder="Falla reportada..." class="full" required rows="2"></textarea>
-        <textarea id="trabajo" placeholder="¿Qué se le hizo? (Trabajo realizado)" class="full" rows="2"></textarea>
+        <textarea id="trabajo" placeholder="Trabajo realizado / Repuestos..." class="full" rows="2"></textarea>
         
-        <div class="full">
-          <div class="photo-upload-zone" onclick="document.getElementById('file-input').click()">
-            <span id="upload-text">📁 Cambiar/Agregar Foto</span>
+        <div class="full no-print">
+          <div class="photo-zone" onclick="document.getElementById('file-input').click()">
+            <span id="upload-text">📸 Adjuntar Foto de Evidencia</span>
             <input type="file" id="file-input" accept="image/*" style="display:none">
             <img id="photo-preview">
           </div>
@@ -63,95 +86,85 @@
         </div>
 
         <select id="estado">
-          <option value="Ingresado">🟡 Ingresado</option>
-          <option value="En Proceso">🟠 En Proceso</option>
-          <option value="Finalizado">🟢 Finalizado / Entregado</option>
+          <option value="Ingresado">🟡 Ingresado (Pendiente)</option>
+          <option value="En Reparacion">🟠 En Reparación</option>
+          <option value="Reparado">🟢 Reparado / Listo</option>
+          <option value="Entregado">🔵 Entregado al Cliente</option>
         </select>
         
-        <button type="submit" id="btn-submit" class="btn btn-save">💾 Guardar Registro</button>
+        <div class="full" style="display:flex; gap:10px; margin-top:10px;">
+            <button type="submit" id="btn-save" class="btn btn-save no-print">💾 Guardar Registro</button>
+            <button type="button" id="btn-print" class="btn btn-print no-print" style="display:none;">🖨️ Imprimir Remito</button>
+        </div>
       </div>
     </form>
-  </div>
-
-  <div class="card">
-    <h2>🔍 Historial del Equipo</h2>
-    <div id="history-result">Ingrese una serie arriba para ver el historial aquí.</div>
+    
+    <div id="historial-container" class="historial-box" style="display:none;">
+        <strong>📜 Historial de este equipo:</strong>
+        <div id="lista-historial"></div>
+    </div>
   </div>
 </div>
 
 <script>
-  // PWA Register
+  // Registro de Service Worker para PWA
   if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
 
   const serieInput = document.getElementById('serie');
-  const clienteInput = document.getElementById('cliente');
-  const equipoInput = document.getElementById('equipo');
-  const btnSubmit = document.getElementById('btn-submit');
-  const statusMsg = document.getElementById('status-msg');
+  const mainForm = document.getElementById('main-form');
+  const infoMsg = document.getElementById('info-msg');
+  const btnPrint = document.getElementById('btn-print');
 
-  // --- LÓGICA DE BÚSQUEDA AUTOMÁTICA ---
-  serieInput.addEventListener('input', () => {
-    verificarSerie(serieInput.value.trim().toUpperCase());
+  // --- BÚSQUEDA Y RECUPERACIÓN DE OBJETO ---
+  serieInput.addEventListener('change', () => {
+    cargarDatosEquipo(serieInput.value.trim().toUpperCase());
   });
 
-  function verificarSerie(serie) {
-    const raw = localStorage.getItem(serie);
-    const historyDiv = document.getElementById('history-result');
+  function cargarDatosEquipo(serie) {
+    const data = localStorage.getItem(serie);
+    if (data) {
+        const equipoObj = JSON.parse(data);
+        const ultimo = equipoObj.intervenciones[equipoObj.intervenciones.length - 1];
 
-    if (raw) {
-      const data = JSON.parse(raw);
-      const ult = (data.intervenciones || [data]).slice(-1)[0];
+        // Llenar campos con el último estado
+        document.getElementById('cliente').value = equipoObj.cliente;
+        document.getElementById('equipo').value = equipoObj.equipo;
+        document.getElementById('falla').value = ultimo.falla;
+        document.getElementById('trabajo').value = ultimo.trabajo || "";
+        document.getElementById('estado').value = ultimo.estado;
 
-      // Autocompletar datos básicos
-      clienteInput.value = ult.cliente;
-      equipoInput.value = ult.equipo;
-      
-      // Cambiar interfaz a modo "Actualización"
-      statusMsg.style.display = "block";
-      statusMsg.style.background = "#e3f2fd";
-      statusMsg.style.color = "#0d47a1";
-      statusMsg.innerText = "📋 Equipo reconocido. Actualizando historial.";
-      btnSubmit.innerText = "🔄 Actualizar Estado / Trabajo";
-      document.getElementById('form-title').innerText = "Actualizar Equipo: " + serie;
-
-      // Mostrar historial abajo de forma automática
-      mostrarHistorial(serie, data);
+        // UI
+        infoMsg.style.display = "block";
+        infoMsg.style.background = "#e3f2fd";
+        infoMsg.innerText = "🔍 Equipo encontrado en base de datos. Modo edición.";
+        btnPrint.style.display = "flex";
+        
+        // Historial
+        document.getElementById('historial-container').style.display = "block";
+        const historialHTML = equipoObj.intervenciones.map(i => 
+            `<div class="historial-item"><b>${i.fecha}:</b> ${i.estado} - ${i.falla.substring(0,20)}...</div>`
+        ).join('');
+        document.getElementById('lista-historial').innerHTML = historialHTML;
     } else {
-      // Modo nuevo equipo
-      statusMsg.style.display = "none";
-      btnSubmit.innerText = "💾 Guardar Nuevo Registro";
-      document.getElementById('form-title').innerText = "Nueva Intervención";
-      historyDiv.innerHTML = "Serie nueva. No hay historial previo.";
+        infoMsg.style.display = "none";
+        btnPrint.style.display = "none";
+        document.getElementById('historial-container').style.display = "none";
     }
   }
 
-  function mostrarHistorial(serie, data) {
-    const lista = data.intervenciones || [data];
-    let h = `<h3>Historial de ${serie}:</h3>`;
-    lista.slice().reverse().forEach(item => {
-        h += `<div class="historial-item">
-            <p><strong>${item.fecha}</strong> - <span style="color:var(--primary)">${item.estado}</span></p>
-            <p><small><b>Falla:</b> ${item.falla}</small></p>
-            <p><small><b>Trabajo:</b> ${item.trabajo || 'Pendiente'}</small></p>
-            ${item.foto ? `<img src="${item.foto}" style="width:60px; border-radius:5px; margin-top:5px;">` : ''}
-        </div>`;
-    });
-    document.getElementById('history-result').innerHTML = h;
-  }
-
-  // --- LÓGICA DEL ESCÁNER ---
-  const html5QrCode = new Html5Qrcode("reader");
-  document.getElementById('btn-start-scan').onclick = () => {
+  // --- ESCÁNER ---
+  const qrScanner = new Html5Qrcode("reader");
+  document.getElementById('btn-scan').onclick = () => {
     document.getElementById('reader').style.display = 'block';
-    html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
+    qrScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
         serieInput.value = text.toUpperCase();
-        verificarSerie(text.toUpperCase());
-        html5QrCode.stop();
+        cargarDatosEquipo(text.toUpperCase());
+        qrScanner.stop();
         document.getElementById('reader').style.display = 'none';
     }).catch(err => console.log(err));
   };
 
-  // --- COMPRESOR DE IMAGEN ---
+  // --- PROCESAMIENTO DE FOTO (Compresión) ---
   document.getElementById('file-input').onchange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -160,50 +173,92 @@
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 800;
-          let width = img.width, height = img.height;
-          if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-          canvas.width = width; canvas.height = height;
           const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          document.getElementById('photo-data').value = canvas.toDataURL('image/jpeg', 0.5);
-          document.getElementById('photo-preview').src = canvas.toDataURL('image/jpeg', 0.5);
+          const scale = 800 / img.width;
+          canvas.width = 800;
+          canvas.height = img.height * scale;
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          document.getElementById('photo-data').value = canvas.toDataURL('image/jpeg', 0.6);
+          document.getElementById('photo-preview').src = canvas.toDataURL('image/jpeg', 0.6);
           document.getElementById('photo-preview').style.display = 'block';
         };
-        img.src = ev.target.result;
+        img.src = ev.result || ev.target.result;
       };
       reader.readAsDataURL(file);
     }
   };
 
-  // --- GUARDADO / ACTUALIZACIÓN ---
-  document.getElementById('main-form').onsubmit = (e) => {
+  // --- GUARDADO (Lógica de Objeto) ---
+  mainForm.onsubmit = (e) => {
     e.preventDefault();
     const serie = serieInput.value.trim().toUpperCase();
     
-    const nuevaEntrada = {
-      fecha: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-      cliente: clienteInput.value,
-      equipo: equipoInput.value,
+    const nuevaIntervencion = {
+      fecha: new Date().toLocaleString(),
       falla: document.getElementById('falla').value,
       trabajo: document.getElementById('trabajo').value,
       estado: document.getElementById('estado').value,
       foto: document.getElementById('photo-data').value
     };
 
-    let data = JSON.parse(localStorage.getItem(serie)) || { serie: serie, intervenciones: [] };
-    if (!data.intervenciones) data = { serie: serie, intervenciones: [data] };
-    
-    data.intervenciones.push(nuevaEntrada);
-    localStorage.setItem(serie, JSON.stringify(data));
+    let equipoDB = JSON.parse(localStorage.getItem(serie)) || {
+        serie: serie,
+        cliente: document.getElementById('cliente').value,
+        equipo: document.getElementById('equipo').value,
+        intervenciones: []
+    };
 
-    alert("✅ Registro actualizado para la serie: " + serie);
-    
-    // Limpiar y resetear para el siguiente
-    e.target.reset();
-    document.getElementById('photo-preview').style.display = 'none';
-    document.getElementById('photo-data').value = "";
-    verificarSerie("");
+    // Actualizar datos generales y agregar historial
+    equipoDB.cliente = document.getElementById('cliente').value;
+    equipoDB.equipo = document.getElementById('equipo').value;
+    equipoDB.intervenciones.push(nuevaIntervencion);
+
+    localStorage.setItem(serie, JSON.stringify(equipoDB));
+    alert("✅ Registro guardado con éxito.");
+    location.reload();
+  };
+
+  // --- IMPRESIÓN DE REMITO ---
+  btnPrint.onclick = () => {
+    const serie = serieInput.value;
+    const equipo = JSON.parse(localStorage.getItem(serie));
+    const u = equipo.intervenciones[equipo.intervenciones.length - 1];
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html><head><title>Remito HAF</title>
+        <style>
+            body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
+            .header { text-align: center; border-bottom: 2px solid #333; margin-bottom: 20px; }
+            .box { border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; border-radius: 8px; }
+            table { width: 100%; border-collapse: collapse; }
+            td { padding: 8px; border: 1px solid #eee; }
+            .footer { margin-top: 50px; text-align: center; font-size: 0.8rem; }
+        </style></head>
+        <body>
+            <div class="header">
+                <h1>REMITO DE SERVICIO TÉCNICO</h1>
+                <p>HAF Service - Gestión de Reparaciones</p>
+            </div>
+            <div class="box">
+                <strong>DATOS DEL CLIENTE:</strong> ${equipo.cliente}<br>
+                <strong>EQUIPO:</strong> ${equipo.equipo}<br>
+                <strong>Nº SERIE:</strong> ${equipo.serie}
+            </div>
+            <div class="box">
+                <strong>FECHA:</strong> ${u.fecha}<br>
+                <strong>ESTADO ACTUAL:</strong> ${u.estado}<br>
+                <hr>
+                <strong>FALLA REPORTADA:</strong><br>${u.falla}<br><br>
+                <strong>TRABAJO REALIZADO:</strong><br>${u.trabajo || 'Pendiente'}
+            </div>
+            <div class="footer">
+                __________________________<br>Firma Técnico / Recibido
+            </div>
+        </body></html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
   };
 </script>
 </body>
