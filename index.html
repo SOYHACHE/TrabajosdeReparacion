@@ -11,42 +11,37 @@
     body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 10px; color: #333; }
     .container { max-width: 1000px; margin: auto; }
     
-    /* Tarjetas y UI */
     .card { background: var(--white); border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
     h2 { color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 8px; font-size: 1.3rem; margin-top: 0; }
     
     .form-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+    input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; box-sizing: border-box; outline: none; }
     .full { grid-column: 1 / -1; }
     
-    /* Botones */
-    .btn { cursor: pointer; padding: 12px; border: none; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+    .btn { cursor: pointer; padding: 12px; border: none; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; text-decoration: none; }
     .btn-primary { background: var(--primary); color: white; }
     .btn-accent { background: var(--accent); color: white; }
+    .btn-danger { background: var(--danger); color: white; }
     .btn-outline { border: 2px solid var(--primary); color: var(--primary); background: transparent; }
     .btn:hover { opacity: 0.9; transform: translateY(-1px); }
 
-    /* Modales (Ventanas Emergentes) */
     .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); }
-    .modal-content { background: var(--white); margin: 5% auto; padding: 25px; width: 90%; max-width: 800px; border-radius: 15px; max-height: 85vh; overflow-y: auto; position: relative; }
+    .modal-content { background: var(--white); margin: 2% auto; padding: 25px; width: 90%; max-width: 800px; border-radius: 15px; max-height: 90vh; overflow-y: auto; position: relative; }
     .close { position: absolute; right: 20px; top: 15px; font-size: 28px; cursor: pointer; color: #666; }
 
-    /* Tabla */
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
-    th { background: #f8f9fa; text-align: left; padding: 12px; border-bottom: 2px solid #eee; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th { background: #f8f9fa; text-align: left; padding: 12px; border-bottom: 2px solid #eee; position: sticky; top: 0; }
     td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
-    tr:hover { background: #f1f7ff; cursor: pointer; }
+    tr:hover { background: #f1f7ff; }
 
-    /* Historial en Detalle */
-    .historial-card { border-left: 4px solid var(--primary); background: #f9f9f9; padding: 12px; margin-bottom: 10px; border-radius: 4px; }
+    .historial-card { border-left: 4px solid var(--primary); background: #f9f9f9; padding: 12px; margin-bottom: 10px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; color: white; font-weight: bold; }
     
-    .print-only { display: none; }
     @media print {
         .no-print { display: none !important; }
-        .print-only { display: block; }
-        .modal { position: absolute; background: white; }
-        .modal-content { box-shadow: none; width: 100%; margin: 0; }
+        .modal { position: absolute; background: white; display: block !important; }
+        .modal-content { box-shadow: none; width: 100%; margin: 0; padding: 0; max-height: none; }
+        .close { display: none; }
     }
     @media (max-width: 600px) { .form-group { grid-template-columns: 1fr; } }
   </style>
@@ -56,7 +51,7 @@
 <div class="container no-print">
     <header style="text-align:center; margin-bottom:20px;">
         <h1>🛠️ HAF Service Manager</h1>
-        <div style="display:flex; justify-content:center; gap:10px;">
+        <div style="display:flex; justify-content:center; gap:10px; flex-wrap: wrap;">
             <button class="btn btn-outline" onclick="abrirListado()">📋 Listado de Reparaciones</button>
             <button class="btn btn-outline" onclick="location.reload()">🆕 Nuevo Registro</button>
         </div>
@@ -73,7 +68,7 @@
                     <button type="button" class="btn btn-accent" id="btn-scan">📷 Scanner</button>
                 </div>
                 <input type="text" id="cliente" placeholder="Nombre del Cliente" required>
-                <input type="text" id="equipo" placeholder="Equipo (Ej: Smart TV 43')" required class="full">
+                <input type="text" id="equipo" placeholder="Equipo (Ej: Heladera Patrick)" required class="full">
                 
                 <textarea id="falla" placeholder="Falla detectada..." class="full" rows="2" required></textarea>
                 <textarea id="trabajo" placeholder="Trabajo realizado / Repuestos..." class="full" rows="2"></textarea>
@@ -85,8 +80,8 @@
                     <option value="Entregado">🔵 Entregado</option>
                 </select>
 
-                <div class="full" style="display:flex; gap:10px;">
-                    <button type="submit" class="btn btn-primary" style="flex:2">💾 Guardar Cambios</button>
+                <div class="full">
+                    <button type="submit" class="btn btn-primary" style="width: 100%">💾 Guardar Cambios</button>
                 </div>
             </div>
         </form>
@@ -96,8 +91,8 @@
 <div id="modalListado" class="modal no-print">
     <div class="modal-content">
         <span class="close" onclick="cerrarModal('modalListado')">&times;</span>
-        <h2>📋 Inventario de Equipos en Taller</h2>
-        <input type="text" id="filtroTabla" placeholder="Filtrar por serie, cliente o equipo..." onkeyup="filtrarTabla()" style="margin-bottom:10px;">
+        <h2>📋 Inventario de Equipos</h2>
+        <input type="text" id="filtroTabla" placeholder="Buscar por serie, cliente o equipo..." onkeyup="filtrarTabla()" style="margin-bottom:10px;">
         <div style="overflow-x:auto;">
             <table id="tablaEquipos">
                 <thead>
@@ -105,7 +100,7 @@
                         <th>Serie</th>
                         <th>Cliente</th>
                         <th>Equipo</th>
-                        <th>Último Estado</th>
+                        <th>Estado</th>
                         <th>Acción</th>
                     </tr>
                 </thead>
@@ -118,33 +113,32 @@
 <div id="modalDetalle" class="modal">
     <div class="modal-content">
         <span class="close no-print" onclick="cerrarModal('modalDetalle')">&times;</span>
-        <div id="contenidoDetalle">
-            </div>
-        <div style="margin-top:20px; display:flex; gap:10px;" class="no-print">
+        <div id="contenidoDetalle"></div>
+        <div style="margin-top:20px; display:flex; gap:10px; flex-wrap: wrap;" class="no-print">
             <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimir Remito</button>
-            <button class="btn btn-accent" id="btnEditarDesdeDetalle">✏️ Cargar nueva reparación</button>
+            <button class="btn btn-accent" id="btnEditarDesdeDetalle">✏️ Agregar Reparación</button>
+            <button class="btn btn-danger" id="btnBorrarUltimo" style="margin-left: auto;">🗑️ Borrar Última</button>
         </div>
     </div>
 </div>
 
 <script>
-    // --- LÓGICA DE DATOS ---
     const mainForm = document.getElementById('main-form');
     const serieInput = document.getElementById('serie');
 
-    // Escuchar si la serie ya existe mientras escribes
     serieInput.addEventListener('change', () => {
         const serie = serieInput.value.trim().toUpperCase();
         const data = localStorage.getItem(serie);
         if(data) {
-            const obj = JSON.parse(data);
-            document.getElementById('cliente').value = obj.cliente;
-            document.getElementById('equipo').value = obj.equipo;
-            document.getElementById('form-mode-title').innerText = "Editando Equipo: " + serie;
+            try {
+                const obj = JSON.parse(data);
+                document.getElementById('cliente').value = obj.cliente;
+                document.getElementById('equipo').value = obj.equipo;
+                document.getElementById('form-mode-title').innerText = "Actualizando Equipo: " + serie;
+            } catch(e) { console.error("Error al cargar serie"); }
         }
     });
 
-    // Guardar / Actualizar
     mainForm.onsubmit = (e) => {
         e.preventDefault();
         const serie = serieInput.value.trim().toUpperCase();
@@ -169,95 +163,120 @@
         location.reload();
     };
 
-    // --- MANEJO DE VENTANAS ---
     function abrirListado() {
         const body = document.getElementById('bodyTabla');
         body.innerHTML = "";
+        let hayDatos = false;
         
         for (let i = 0; i < localStorage.length; i++) {
             const clave = localStorage.key(i);
             try {
                 const item = JSON.parse(localStorage.getItem(clave));
-                if(!item.serie) continue; // Evitar basura del navegador
-                
-                const ultimo = item.intervenciones[item.intervenciones.length - 1];
-                const tr = document.createElement('tr');
-                tr.onclick = () => verDetalle(item.serie);
-                tr.innerHTML = `
-                    <td><b>${item.serie}</b></td>
-                    <td>${item.cliente}</td>
-                    <td>${item.equipo}</td>
-                    <td><span class="badge" style="background:${getColor(ultimo.estado)}">${ultimo.estado}</span></td>
-                    <td><button class="btn btn-accent" style="padding:5px 10px; font-size:12px;">Ver Ficha</button></td>
-                `;
-                body.appendChild(tr);
-            } catch(e) {}
+                if(item && item.serie && Array.isArray(item.intervenciones)) {
+                    hayDatos = true;
+                    const ultimo = item.intervenciones[item.intervenciones.length - 1];
+                    const tr = document.createElement('tr');
+                    
+                    tr.innerHTML = `
+                        <td onclick="verDetalle('${item.serie}')"><b>${item.serie}</b></td>
+                        <td onclick="verDetalle('${item.serie}')">${item.cliente}</td>
+                        <td onclick="verDetalle('${item.serie}')">${item.equipo}</td>
+                        <td onclick="verDetalle('${item.serie}')"><span class="badge" style="background:${getColor(ultimo.estado)}">${ultimo.estado}</span></td>
+                        <td>
+                            <button class="btn" style="background:#eee; padding:5px; color:var(--danger)" onclick="borrarEquipoCompleto('${item.serie}')">🗑️</button>
+                        </td>
+                    `;
+                    body.appendChild(tr);
+                }
+            } catch(e) { continue; }
         }
+
+        if(!hayDatos) body.innerHTML = "<tr><td colspan='5' style='text-align:center'>No hay registros guardados.</td></tr>";
         document.getElementById('modalListado').style.display = "block";
     }
 
+    function borrarEquipoCompleto(serie) {
+        if(confirm(`¿Estás seguro de eliminar TODO el historial de la serie ${serie}?`)) {
+            localStorage.removeItem(serie);
+            abrirListado();
+        }
+    }
+
     function verDetalle(serie) {
-        const item = JSON.parse(localStorage.getItem(serie));
+        const data = localStorage.getItem(serie);
+        if(!data) return;
+        const item = JSON.parse(data);
         const container = document.getElementById('contenidoDetalle');
         
         let historialHTML = item.intervenciones.map((int, index) => `
             <div class="historial-card">
-                <div style="display:flex; justify-content:space-between;">
-                    <strong>📍 Evento #${index + 1}</strong>
-                    <small>${int.fecha}</small>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <strong>🛠️ Intervención #${index + 1}</strong>
+                    <span class="badge" style="background:${getColor(int.estado)}">${int.estado}</span>
                 </div>
-                <p><b>Estado:</b> ${int.estado}</p>
+                <p style="margin:5px 0"><small>${int.fecha}</small></p>
                 <p><b>Falla:</b> ${int.falla}</p>
-                <p><b>Trabajo:</b> ${int.trabajo || '<i>Sin especificar</i>'}</p>
+                <p><b>Trabajo:</b> ${int.trabajo || '---'}</p>
             </div>
         `).reverse().join('');
 
         container.innerHTML = `
-            <h1 style="color:var(--primary); margin:0;">REMITO TÉCNICO</h1>
-            <p>HAF Service - Gestión de Reparaciones</p>
-            <hr>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:20px;">
+            <div style="text-align:center; border-bottom: 2px solid #333; margin-bottom:15px;">
+                <h1 style="margin:0; color:#1976d2;">REMITO TÉCNICO - HAF</h1>
+                <p style="margin:5px 0;">Servicio de Reparaciones y Mantenimiento</p>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px; background:#f9f9f9; padding:10px; border-radius:8px;">
                 <div>
                     <strong>CLIENTE:</strong> ${item.cliente}<br>
                     <strong>EQUIPO:</strong> ${item.equipo}
                 </div>
-                <div>
+                <div style="text-align:right;">
                     <strong>SERIE:</strong> ${item.serie}<br>
-                    <strong>FECHA REPORTE:</strong> ${item.intervenciones[0].fecha}
+                    <strong>FECHA INGRESO:</strong> ${item.intervenciones[0].fecha.split(',')[0]}
                 </div>
             </div>
-            <h3>Historial de Reparaciones y Estados:</h3>
+            <h3>📜 Historial de Reparaciones</h3>
             ${historialHTML}
         `;
+
+        // Botón para borrar solo la última entrada
+        document.getElementById('btnBorrarUltimo').onclick = () => {
+            if(confirm("¿Eliminar la última reparación registrada?")) {
+                item.intervenciones.pop();
+                if(item.intervenciones.length === 0) {
+                    localStorage.removeItem(serie);
+                    cerrarModal('modalDetalle');
+                    abrirListado();
+                } else {
+                    localStorage.setItem(serie, JSON.stringify(item));
+                    verDetalle(serie);
+                }
+            }
+        };
 
         document.getElementById('btnEditarDesdeDetalle').onclick = () => {
             cerrarModal('modalDetalle');
             cerrarModal('modalListado');
             serieInput.value = item.serie;
-            cargarDatosEquipoDesdeDetalle(item.serie);
+            document.getElementById('cliente').value = item.cliente;
+            document.getElementById('equipo').value = item.equipo;
+            document.getElementById('form-mode-title').innerText = "Actualizando: " + item.serie;
+            window.scrollTo({top: 0, behavior: 'smooth'});
         };
 
         document.getElementById('modalDetalle').style.display = "block";
     }
 
-    function cargarDatosEquipoDesdeDetalle(serie) {
-        const obj = JSON.parse(localStorage.getItem(serie));
-        serieInput.value = obj.serie;
-        document.getElementById('cliente').value = obj.cliente;
-        document.getElementById('equipo').value = obj.equipo;
-        document.getElementById('form-mode-title').innerText = "Actualizando: " + serie;
-        window.scrollTo(0,0);
-    }
-
-    // --- UTILIDADES ---
     function cerrarModal(id) { document.getElementById(id).style.display = "none"; }
     
     function getColor(estado) {
-        if(estado === "Ingresado") return "#f1c40f";
-        if(estado === "En Reparacion") return "#e67e22";
-        if(estado === "Reparado") return "#2ecc71";
-        if(estado === "Entregado") return "#3498db";
-        return "#999";
+        switch(estado) {
+            case "Ingresado": return "#f1c40f";
+            case "En Reparacion": return "#e67e22";
+            case "Reparado": return "#2ecc71";
+            case "Entregado": return "#3498db";
+            default: return "#999";
+        }
     }
 
     function filtrarTabla() {
@@ -269,7 +288,6 @@
         }
     }
 
-    // Escáner
     const qrScanner = new Html5Qrcode("reader");
     document.getElementById('btn-scan').onclick = () => {
         const r = document.getElementById('reader');
@@ -279,7 +297,7 @@
             serieInput.dispatchEvent(new Event('change'));
             qrScanner.stop();
             r.style.display = 'none';
-        }).catch(err => console.log(err));
+        }).catch(err => alert("Error de cámara: " + err));
     };
 </script>
 </body>
