@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HAF Service Pro</title>
+  <title>HAF Service Pro - Gestión de Estados</title>
   <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;600&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/html5-qrcode"></script>
@@ -23,13 +23,8 @@
     #photo-preview { width: 100%; max-width: 200px; border-radius: 8px; margin-top: 10px; display: none; margin-inline: auto; }
     .btn { cursor: pointer; padding: 12px 20px; border: none; border-radius: 8px; font-weight: bold; transition: 0.3s; }
     .btn-save { background: var(--primary); color: white; width: 100%; }
-    .btn-list { background: #607d8b; color: white; }
-    .btn-del { background: var(--danger); color: white; padding: 5px 10px; border-radius: 5px; font-size: 12px; }
-    .btn-jpg { background: var(--success); color: white; margin-top: 10px; font-size: 13px; }
-    .historial-item { border-left: 4px solid var(--primary); padding: 15px; margin: 10px 0; background: #fff; border-radius: 8px; display: flex; gap: 15px; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-    .historial-foto { width: 80px; height: 80px; object-fit: cover; border-radius: 5px; border: 1px solid #eee; }
-    table { width: 100%; border-collapse: collapse; min-width: 500px; }
-    th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
+    .status-alert { padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none; font-weight: bold; text-align: center; }
+    .historial-item { border-left: 4px solid var(--primary); padding: 15px; margin: 10px 0; background: #fff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
     @media (max-width: 600px) { .form-group { grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -37,60 +32,50 @@
 
 <div class="container">
   <header style="text-align:center; margin-bottom:20px;">
-    <h1>🛠️ Sistema HAF Pro</h1>
-    <div style="display:flex; justify-content:center; gap:10px;">
-        <button class="btn btn-list" id="btn-show-all">📋 Ver Listado Global</button>
-    </div>
+    <h1>🛠️ HAF Service Pro</h1>
   </header>
 
   <div class="card" id="form-card">
-    <h2>Nueva Intervención</h2>
+    <h2 id="form-title">Nueva Intervención</h2>
+    <div id="status-msg" class="status-alert"></div>
     <div id="reader"></div>
+    
     <form id="main-form">
       <div class="form-group">
         <div class="input-con-boton">
-            <input type="text" id="serie" placeholder="NÚMERO DE SERIE / IMEI" required>
+            <input type="text" id="serie" placeholder="ESCANEAR O ESCRIBIR SERIE" required autocomplete="off">
             <button type="button" class="btn-scan" id="btn-start-scan">📷</button>
         </div>
+
         <input type="text" id="cliente" placeholder="Nombre del Cliente" required>
         <input type="text" id="equipo" placeholder="Equipo / Modelo" required class="full">
-        <textarea id="falla" placeholder="Falla..." class="full" required rows="2"></textarea>
-        <textarea id="trabajo" placeholder="Trabajo realizado..." class="full" rows="2"></textarea>
+        
+        <textarea id="falla" placeholder="Falla reportada..." class="full" required rows="2"></textarea>
+        <textarea id="trabajo" placeholder="¿Qué se le hizo? (Trabajo realizado)" class="full" rows="2"></textarea>
+        
         <div class="full">
           <div class="photo-upload-zone" onclick="document.getElementById('file-input').click()">
-            <span id="upload-text">📁 Importar Foto (JPG)</span>
+            <span id="upload-text">📁 Cambiar/Agregar Foto</span>
             <input type="file" id="file-input" accept="image/*" style="display:none">
             <img id="photo-preview">
           </div>
           <input type="hidden" id="photo-data">
         </div>
+
         <select id="estado">
-          <option value="Ingresado">Ingresado</option>
-          <option value="En Proceso">En Proceso</option>
-          <option value="Finalizado">Finalizado</option>
+          <option value="Ingresado">🟡 Ingresado</option>
+          <option value="En Proceso">🟠 En Proceso</option>
+          <option value="Finalizado">🟢 Finalizado / Entregado</option>
         </select>
-        <button type="submit" class="btn btn-save">💾 Guardar Registro</button>
+        
+        <button type="submit" id="btn-submit" class="btn btn-save">💾 Guardar Registro</button>
       </div>
     </form>
   </div>
 
   <div class="card">
-    <h2>🔍 Buscar por Serie</h2>
-    <div style="display:flex; gap:10px;">
-      <input type="text" id="search-input" placeholder="Serie...">
-      <button class="btn btn-save" id="btn-search" style="width:auto;">Buscar</button>
-    </div>
-    <div id="history-result"></div>
-  </div>
-
-  <div class="card" id="listado-card" style="display:none;">
-    <h2>📋 Todos los Trabajos <button onclick="this.closest('.card').style.display='none'" style="float:right; border:none; background:none; cursor:pointer;">✖</button></h2>
-    <div style="overflow-x:auto;">
-        <table>
-            <thead><tr><th>Fecha</th><th>Serie</th><th>Cliente</th><th>Estado</th><th>Acción</th></tr></thead>
-            <tbody id="global-table-body"></tbody>
-        </table>
-    </div>
+    <h2>🔍 Historial del Equipo</h2>
+    <div id="history-result">Ingrese una serie arriba para ver el historial aquí.</div>
   </div>
 </div>
 
@@ -98,32 +83,76 @@
   // PWA Register
   if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
 
-  const fileInput = document.getElementById('file-input');
-  const photoPreview = document.getElementById('photo-preview');
-  const photoDataInput = document.getElementById('photo-data');
-  const uploadText = document.getElementById('upload-text');
+  const serieInput = document.getElementById('serie');
+  const clienteInput = document.getElementById('cliente');
+  const equipoInput = document.getElementById('equipo');
+  const btnSubmit = document.getElementById('btn-submit');
+  const statusMsg = document.getElementById('status-msg');
 
-  // Escáner QR/Barras
-  const html5QrCode = new Html5Qrcode("reader");
-  const btnScan = document.getElementById('btn-start-scan');
-  let scannerActivo = false;
+  // --- LÓGICA DE BÚSQUEDA AUTOMÁTICA ---
+  serieInput.addEventListener('input', () => {
+    verificarSerie(serieInput.value.trim().toUpperCase());
+  });
 
-  btnScan.onclick = () => {
-    if (scannerActivo) { pararEscaner(); return; }
-    document.getElementById('reader').style.display = 'block';
-    scannerActivo = true; btnScan.innerText = "❌";
-    html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-        document.getElementById('serie').value = text.toUpperCase();
-        pararEscaner();
-    }).catch(() => pararEscaner());
-  };
+  function verificarSerie(serie) {
+    const raw = localStorage.getItem(serie);
+    const historyDiv = document.getElementById('history-result');
 
-  function pararEscaner() {
-    html5QrCode.stop().then(() => { document.getElementById('reader').style.display = 'none'; btnScan.innerText = "📷"; scannerActivo = false; });
+    if (raw) {
+      const data = JSON.parse(raw);
+      const ult = (data.intervenciones || [data]).slice(-1)[0];
+
+      // Autocompletar datos básicos
+      clienteInput.value = ult.cliente;
+      equipoInput.value = ult.equipo;
+      
+      // Cambiar interfaz a modo "Actualización"
+      statusMsg.style.display = "block";
+      statusMsg.style.background = "#e3f2fd";
+      statusMsg.style.color = "#0d47a1";
+      statusMsg.innerText = "📋 Equipo reconocido. Actualizando historial.";
+      btnSubmit.innerText = "🔄 Actualizar Estado / Trabajo";
+      document.getElementById('form-title').innerText = "Actualizar Equipo: " + serie;
+
+      // Mostrar historial abajo de forma automática
+      mostrarHistorial(serie, data);
+    } else {
+      // Modo nuevo equipo
+      statusMsg.style.display = "none";
+      btnSubmit.innerText = "💾 Guardar Nuevo Registro";
+      document.getElementById('form-title').innerText = "Nueva Intervención";
+      historyDiv.innerHTML = "Serie nueva. No hay historial previo.";
+    }
   }
 
-  // Compresor de Imagen
-  fileInput.onchange = (e) => {
+  function mostrarHistorial(serie, data) {
+    const lista = data.intervenciones || [data];
+    let h = `<h3>Historial de ${serie}:</h3>`;
+    lista.slice().reverse().forEach(item => {
+        h += `<div class="historial-item">
+            <p><strong>${item.fecha}</strong> - <span style="color:var(--primary)">${item.estado}</span></p>
+            <p><small><b>Falla:</b> ${item.falla}</small></p>
+            <p><small><b>Trabajo:</b> ${item.trabajo || 'Pendiente'}</small></p>
+            ${item.foto ? `<img src="${item.foto}" style="width:60px; border-radius:5px; margin-top:5px;">` : ''}
+        </div>`;
+    });
+    document.getElementById('history-result').innerHTML = h;
+  }
+
+  // --- LÓGICA DEL ESCÁNER ---
+  const html5QrCode = new Html5Qrcode("reader");
+  document.getElementById('btn-start-scan').onclick = () => {
+    document.getElementById('reader').style.display = 'block';
+    html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
+        serieInput.value = text.toUpperCase();
+        verificarSerie(text.toUpperCase());
+        html5QrCode.stop();
+        document.getElementById('reader').style.display = 'none';
+    }).catch(err => console.log(err));
+  };
+
+  // --- COMPRESOR DE IMAGEN ---
+  document.getElementById('file-input').onchange = (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
@@ -137,9 +166,9 @@
           canvas.width = width; canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
-          const dataURL = canvas.toDataURL('image/jpeg', 0.5);
-          photoDataInput.value = dataURL; photoPreview.src = dataURL; photoPreview.style.display = 'block';
-          uploadText.innerText = "✅ Foto Cargada";
+          document.getElementById('photo-data').value = canvas.toDataURL('image/jpeg', 0.5);
+          document.getElementById('photo-preview').src = canvas.toDataURL('image/jpeg', 0.5);
+          document.getElementById('photo-preview').style.display = 'block';
         };
         img.src = ev.target.result;
       };
@@ -147,101 +176,34 @@
     }
   };
 
-  // Guardado
+  // --- GUARDADO / ACTUALIZACIÓN ---
   document.getElementById('main-form').onsubmit = (e) => {
     e.preventDefault();
-    const serie = document.getElementById('serie').value.trim().toUpperCase();
-    const entrada = {
-      id: Date.now(), fecha: new Date().toLocaleDateString(),
-      cliente: document.getElementById('cliente').value,
-      equipo: document.getElementById('equipo').value,
+    const serie = serieInput.value.trim().toUpperCase();
+    
+    const nuevaEntrada = {
+      fecha: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+      cliente: clienteInput.value,
+      equipo: equipoInput.value,
       falla: document.getElementById('falla').value,
       trabajo: document.getElementById('trabajo').value,
       estado: document.getElementById('estado').value,
-      foto: photoDataInput.value
+      foto: document.getElementById('photo-data').value
     };
-    try {
-      let d = JSON.parse(localStorage.getItem(serie)) || { serie: serie, intervenciones: [] };
-      if (!d.intervenciones) d = { serie: serie, intervenciones: [d] };
-      d.intervenciones.push(entrada);
-      localStorage.setItem(serie, JSON.stringify(d));
-      alert("✅ Guardado correctamente");
-      e.target.reset(); photoPreview.style.display = 'none'; photoDataInput.value = "";
-    } catch(err) { alert("Memoria llena"); }
-  };
 
-  // Buscador y Generador JPG
-  document.getElementById('btn-search').onclick = () => {
-    const s = document.getElementById('search-input').value.trim().toUpperCase();
-    const raw = localStorage.getItem(s);
-    const res = document.getElementById('history-result');
-    if(!raw) { res.innerHTML = "No hay datos"; return; }
-    const obj = JSON.parse(raw);
-    const lista = obj.intervenciones || [obj];
-    let h = `<h3>Serie: ${s}</h3><button class="btn btn-jpg" onclick="exportarJPG('${s}')">📥 Descargar Ficha JPG</button>`;
-    lista.slice().reverse().forEach(item => {
-        h += `<div class="historial-item">
-            ${item.foto ? `<img src="${item.foto}" class="historial-foto">` : '<div></div>'}
-            <div><p><strong>${item.fecha}</strong> - ${item.estado}</p><p><small>${item.equipo}</small></p></div>
-        </div>`;
-    });
-    res.innerHTML = h;
-  };
+    let data = JSON.parse(localStorage.getItem(serie)) || { serie: serie, intervenciones: [] };
+    if (!data.intervenciones) data = { serie: serie, intervenciones: [data] };
+    
+    data.intervenciones.push(nuevaEntrada);
+    localStorage.setItem(serie, JSON.stringify(data));
 
-  function exportarJPG(serie) {
-    const raw = localStorage.getItem(serie);
-    const obj = JSON.parse(raw);
-    const item = (obj.intervenciones || [obj]).pop();
-    const canvas = document.createElement('canvas');
-    canvas.width = 600; canvas.height = 700;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = "white"; ctx.fillRect(0,0,600,700);
-    ctx.fillStyle = "#1976d2"; ctx.fillRect(0,0,600,60);
-    ctx.fillStyle = "white"; ctx.font = "20px Arial"; ctx.fillText("HAF SERVICE - FICHA TÉCNICA", 20, 40);
-    ctx.fillStyle = "black"; ctx.font = "16px Arial";
-    ctx.fillText("Serie: " + serie, 30, 100);
-    ctx.fillText("Cliente: " + item.cliente, 30, 130);
-    ctx.fillText("Equipo: " + item.equipo, 30, 160);
-    ctx.fillText("Falla: " + item.falla, 30, 190);
-    if(item.foto) {
-        const img = new Image();
-        img.onload = () => { ctx.drawImage(img, 30, 250, 540, 400); finalizarJPG(canvas, serie); };
-        img.src = item.foto;
-    } else { finalizarJPG(canvas, serie); }
-  }
-
-  function finalizarJPG(canvas, serie) {
-    const a = document.createElement('a');
-    a.download = `REPARACION_${serie}.jpg`;
-    a.href = canvas.toDataURL("image/jpeg", 0.8);
-    a.click();
-  }
-
-  // Listado Global
-  document.getElementById('btn-show-all').onclick = () => {
-    const tbody = document.getElementById('global-table-body');
-    document.getElementById('listado-card').style.display = 'block';
-    tbody.innerHTML = '';
-    for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k === 'reparaciones') continue;
-        const d = JSON.parse(localStorage.getItem(k));
-        const l = d.intervenciones || [d];
-        l.forEach((item, idx) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${item.fecha}</td><td>${k}</td><td>${item.cliente}</td><td>${item.estado}</td><td><button class="btn-del" onclick="eliminar('${k}', ${idx})">✕</button></td>`;
-            tbody.appendChild(tr);
-        });
-    }
-  };
-
-  window.eliminar = (s, idx) => {
-    if(confirm("¿Eliminar?")){
-        let d = JSON.parse(localStorage.getItem(s));
-        if(d.intervenciones) { d.intervenciones.splice(idx, 1); if(d.intervenciones.length === 0) localStorage.removeItem(s); else localStorage.setItem(s, JSON.stringify(d)); }
-        else localStorage.removeItem(s);
-        document.getElementById('btn-show-all').click();
-    }
+    alert("✅ Registro actualizado para la serie: " + serie);
+    
+    // Limpiar y resetear para el siguiente
+    e.target.reset();
+    document.getElementById('photo-preview').style.display = 'none';
+    document.getElementById('photo-data').value = "";
+    verificarSerie("");
   };
 </script>
 </body>
