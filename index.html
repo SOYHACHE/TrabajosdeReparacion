@@ -23,7 +23,10 @@
     .btn-accent { background: var(--accent); color: white; }
     .btn-danger { background: var(--danger); color: white; }
     .btn-outline { border: 2px solid var(--primary); color: var(--primary); background: transparent; }
-    .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    
+    /* Zona de Foto */
+    .photo-upload-zone { border: 2px dashed #ccc; padding: 15px; text-align: center; border-radius: 8px; cursor: pointer; background: #fafafa; margin-top: 5px; }
+    #photo-preview { width: 100%; max-width: 200px; border-radius: 8px; margin-top: 10px; display: none; margin-inline: auto; }
 
     .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); }
     .modal-content { background: var(--white); margin: 2% auto; padding: 25px; width: 90%; max-width: 800px; border-radius: 15px; max-height: 90vh; overflow-y: auto; position: relative; }
@@ -41,7 +44,6 @@
         .no-print { display: none !important; }
         .modal { position: absolute; background: white; display: block !important; }
         .modal-content { box-shadow: none; width: 100%; margin: 0; padding: 0; max-height: none; }
-        .close { display: none; }
     }
     @media (max-width: 600px) { .form-group { grid-template-columns: 1fr; } }
   </style>
@@ -73,6 +75,15 @@
                 <textarea id="falla" placeholder="Falla detectada..." class="full" rows="2" required></textarea>
                 <textarea id="trabajo" placeholder="Trabajo realizado / Repuestos..." class="full" rows="2"></textarea>
                 
+                <div class="full">
+                    <div class="photo-upload-zone" onclick="document.getElementById('file-input').click()">
+                        <span id="upload-text">📸 Seleccionar Foto de la Reparación</span>
+                        <input type="file" id="file-input" accept="image/*" style="display:none">
+                        <img id="photo-preview">
+                    </div>
+                    <input type="hidden" id="photo-data">
+                </div>
+
                 <select id="estado">
                     <option value="Ingresado">🟡 Ingresado</option>
                     <option value="En Reparacion">🟠 En Reparación</option>
@@ -92,17 +103,11 @@
     <div class="modal-content">
         <span class="close" onclick="cerrarModal('modalListado')">&times;</span>
         <h2>📋 Inventario de Equipos</h2>
-        <input type="text" id="filtroTabla" placeholder="Buscar por serie, cliente o equipo..." onkeyup="filtrarTabla()" style="margin-bottom:10px;">
+        <input type="text" id="filtroTabla" placeholder="Buscar..." onkeyup="filtrarTabla()" style="margin-bottom:10px;">
         <div style="overflow-x:auto;">
             <table id="tablaEquipos">
                 <thead>
-                    <tr>
-                        <th>Serie</th>
-                        <th>Cliente</th>
-                        <th>Equipo</th>
-                        <th>Estado</th>
-                        <th>Acción</th>
-                    </tr>
+                    <tr><th>Serie</th><th>Cliente</th><th>Equipo</th><th>Estado</th><th>Acción</th></tr>
                 </thead>
                 <tbody id="bodyTabla"></tbody>
             </table>
@@ -125,17 +130,46 @@
 <script>
     const mainForm = document.getElementById('main-form');
     const serieInput = document.getElementById('serie');
+    const fileInput = document.getElementById('file-input');
+    const photoPreview = document.getElementById('photo-preview');
+    const photoDataInput = document.getElementById('photo-data');
+    const uploadText = document.getElementById('upload-text');
+
+    // --- COMPRESOR DE IMAGEN ---
+    fileInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800;
+                    let width = img.width, height = img.height;
+                    if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const dataURL = canvas.toDataURL('image/jpeg', 0.5);
+                    photoDataInput.value = dataURL;
+                    photoPreview.src = dataURL;
+                    photoPreview.style.display = 'block';
+                    uploadText.innerText = "✅ Foto Cargada";
+                };
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     serieInput.addEventListener('change', () => {
         const serie = serieInput.value.trim().toUpperCase();
         const data = localStorage.getItem(serie);
         if(data) {
-            try {
-                const obj = JSON.parse(data);
-                document.getElementById('cliente').value = obj.cliente;
-                document.getElementById('equipo').value = obj.equipo;
-                document.getElementById('form-mode-title').innerText = "Actualizando Equipo: " + serie;
-            } catch(e) { console.error("Error al cargar serie"); }
+            const obj = JSON.parse(data);
+            document.getElementById('cliente').value = obj.cliente;
+            document.getElementById('equipo').value = obj.equipo;
+            document.getElementById('form-mode-title').innerText = "Actualizando Equipo: " + serie;
         }
     });
 
@@ -146,19 +180,16 @@
             fecha: new Date().toLocaleString(),
             falla: document.getElementById('falla').value,
             trabajo: document.getElementById('trabajo').value,
-            estado: document.getElementById('estado').value
+            estado: document.getElementById('estado').value,
+            foto: photoDataInput.value
         };
 
         let equipoObj = JSON.parse(localStorage.getItem(serie)) || {
-            serie: serie,
-            cliente: document.getElementById('cliente').value,
-            equipo: document.getElementById('equipo').value,
-            intervenciones: []
+            serie: serie, cliente: document.getElementById('cliente').value, equipo: document.getElementById('equipo').value, intervenciones: []
         };
 
         equipoObj.intervenciones.push(nuevaIntervencion);
         localStorage.setItem(serie, JSON.stringify(equipoObj));
-        
         alert("✅ Datos guardados correctamente");
         location.reload();
     };
@@ -166,48 +197,32 @@
     function abrirListado() {
         const body = document.getElementById('bodyTabla');
         body.innerHTML = "";
-        let hayDatos = false;
-        
         for (let i = 0; i < localStorage.length; i++) {
             const clave = localStorage.key(i);
             try {
                 const item = JSON.parse(localStorage.getItem(clave));
                 if(item && item.serie && Array.isArray(item.intervenciones)) {
-                    hayDatos = true;
                     const ultimo = item.intervenciones[item.intervenciones.length - 1];
                     const tr = document.createElement('tr');
-                    
                     tr.innerHTML = `
                         <td onclick="verDetalle('${item.serie}')"><b>${item.serie}</b></td>
                         <td onclick="verDetalle('${item.serie}')">${item.cliente}</td>
                         <td onclick="verDetalle('${item.serie}')">${item.equipo}</td>
                         <td onclick="verDetalle('${item.serie}')"><span class="badge" style="background:${getColor(ultimo.estado)}">${ultimo.estado}</span></td>
-                        <td>
-                            <button class="btn" style="background:#eee; padding:5px; color:var(--danger)" onclick="borrarEquipoCompleto('${item.serie}')">🗑️</button>
-                        </td>
+                        <td><button class="btn" style="background:#eee; padding:5px; color:var(--danger)" onclick="borrarEquipo('${item.serie}')">🗑️</button></td>
                     `;
                     body.appendChild(tr);
                 }
             } catch(e) { continue; }
         }
-
-        if(!hayDatos) body.innerHTML = "<tr><td colspan='5' style='text-align:center'>No hay registros guardados.</td></tr>";
         document.getElementById('modalListado').style.display = "block";
     }
 
-    function borrarEquipoCompleto(serie) {
-        if(confirm(`¿Estás seguro de eliminar TODO el historial de la serie ${serie}?`)) {
-            localStorage.removeItem(serie);
-            abrirListado();
-        }
-    }
+    function borrarEquipo(s) { if(confirm(`¿Eliminar serie ${s}?`)) { localStorage.removeItem(s); abrirListado(); } }
 
     function verDetalle(serie) {
-        const data = localStorage.getItem(serie);
-        if(!data) return;
-        const item = JSON.parse(data);
+        const item = JSON.parse(localStorage.getItem(serie));
         const container = document.getElementById('contenidoDetalle');
-        
         let historialHTML = item.intervenciones.map((int, index) => `
             <div class="historial-card">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -217,87 +232,60 @@
                 <p style="margin:5px 0"><small>${int.fecha}</small></p>
                 <p><b>Falla:</b> ${int.falla}</p>
                 <p><b>Trabajo:</b> ${int.trabajo || '---'}</p>
+                ${int.foto ? `<img src="${int.foto}" style="width:100%; max-width:200px; border-radius:5px; margin-top:10px;">` : ''}
             </div>
         `).reverse().join('');
 
         container.innerHTML = `
             <div style="text-align:center; border-bottom: 2px solid #333; margin-bottom:15px;">
                 <h1 style="margin:0; color:#1976d2;">REMITO TÉCNICO - HAF</h1>
-                <p style="margin:5px 0;">Servicio de Reparaciones y Mantenimiento</p>
             </div>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px; background:#f9f9f9; padding:10px; border-radius:8px;">
-                <div>
-                    <strong>CLIENTE:</strong> ${item.cliente}<br>
-                    <strong>EQUIPO:</strong> ${item.equipo}
-                </div>
-                <div style="text-align:right;">
-                    <strong>SERIE:</strong> ${item.serie}<br>
-                    <strong>FECHA INGRESO:</strong> ${item.intervenciones[0].fecha.split(',')[0]}
-                </div>
+                <div><strong>CLIENTE:</strong> ${item.cliente}<br><strong>EQUIPO:</strong> ${item.equipo}</div>
+                <div style="text-align:right;"><strong>SERIE:</strong> ${item.serie}</div>
             </div>
-            <h3>📜 Historial de Reparaciones</h3>
             ${historialHTML}
         `;
 
-        // Botón para borrar solo la última entrada
         document.getElementById('btnBorrarUltimo').onclick = () => {
-            if(confirm("¿Eliminar la última reparación registrada?")) {
+            if(confirm("¿Eliminar última?")) {
                 item.intervenciones.pop();
-                if(item.intervenciones.length === 0) {
-                    localStorage.removeItem(serie);
-                    cerrarModal('modalDetalle');
-                    abrirListado();
-                } else {
-                    localStorage.setItem(serie, JSON.stringify(item));
-                    verDetalle(serie);
-                }
+                if(item.intervenciones.length === 0) localStorage.removeItem(serie);
+                else localStorage.setItem(serie, JSON.stringify(item));
+                location.reload();
             }
         };
 
         document.getElementById('btnEditarDesdeDetalle').onclick = () => {
-            cerrarModal('modalDetalle');
-            cerrarModal('modalListado');
+            cerrarModal('modalDetalle'); cerrarModal('modalListado');
             serieInput.value = item.serie;
             document.getElementById('cliente').value = item.cliente;
             document.getElementById('equipo').value = item.equipo;
-            document.getElementById('form-mode-title').innerText = "Actualizando: " + item.serie;
             window.scrollTo({top: 0, behavior: 'smooth'});
         };
-
         document.getElementById('modalDetalle').style.display = "block";
     }
 
     function cerrarModal(id) { document.getElementById(id).style.display = "none"; }
-    
-    function getColor(estado) {
-        switch(estado) {
-            case "Ingresado": return "#f1c40f";
-            case "En Reparacion": return "#e67e22";
-            case "Reparado": return "#2ecc71";
-            case "Entregado": return "#3498db";
-            default: return "#999";
-        }
+    function getColor(e) {
+        if(e === "Ingresado") return "#f1c40f"; if(e === "En Reparacion") return "#e67e22";
+        if(e === "Reparado") return "#2ecc71"; if(e === "Entregado") return "#3498db";
+        return "#999";
     }
 
     function filtrarTabla() {
-        const input = document.getElementById("filtroTabla").value.toUpperCase();
-        const filas = document.getElementById("tablaEquipos").getElementsByTagName("tr");
-        for (let i = 1; i < filas.length; i++) {
-            const texto = filas[i].textContent || filas[i].innerText;
-            filas[i].style.display = texto.toUpperCase().indexOf(input) > -1 ? "" : "none";
-        }
+        const val = document.getElementById("filtroTabla").value.toUpperCase();
+        const filas = document.querySelectorAll("#tablaEquipos tr");
+        filas.forEach((f, i) => { if(i>0) f.style.display = f.innerText.toUpperCase().includes(val) ? "" : "none"; });
     }
 
     const qrScanner = new Html5Qrcode("reader");
     document.getElementById('btn-scan').onclick = () => {
-        const r = document.getElementById('reader');
-        r.style.display = 'block';
+        document.getElementById('reader').style.display = 'block';
         qrScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-            serieInput.value = text.toUpperCase();
-            serieInput.dispatchEvent(new Event('change'));
-            qrScanner.stop();
-            r.style.display = 'none';
-        }).catch(err => alert("Error de cámara: " + err));
+            serieInput.value = text.toUpperCase(); serieInput.dispatchEvent(new Event('change'));
+            qrScanner.stop(); document.getElementById('reader').style.display = 'none';
+        }).catch(err => alert(err));
     };
 </script>
 </body>
